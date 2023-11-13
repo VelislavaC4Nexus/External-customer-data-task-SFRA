@@ -36,7 +36,6 @@ function postCustomerData() {
             svc.setURL(params.URL);
             svc.addHeader('Content-Type', 'application/json');
             svc.addHeader('Authorization', 'Bearer ' + tokenStorage.getToken());
-            // Logger.getLogger('credPayment', 'credPayment').info('credPayment request: ' + JSON.stringify(params));
             return JSON.stringify(params.body);
         },
         parseResponse: function (svc, response) {

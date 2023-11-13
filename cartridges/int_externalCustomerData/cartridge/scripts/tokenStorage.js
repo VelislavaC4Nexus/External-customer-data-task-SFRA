@@ -10,7 +10,7 @@ function getToken() {
     if (tokenObject) {
         var currentTime = new Date().getTime();
 
-        if (currentTime < Number(tokenObject.expiryTime)) {//config.APIURL.timeout
+        if (currentTime < Number(tokenObject.expiryTime)) {
             return tokenObject.token;
         }
     }
@@ -22,7 +22,6 @@ function getToken() {
 }
 
 function saveTokenToCustomObject(tokenObject) {
-    // var tokenCustomObjectType = config.customObjectType.AccessToken;
     var tokenCustomObject = CustomObjectMgr.getCustomObject(type, keyValue);
 
     Transaction.begin();
@@ -35,7 +34,6 @@ function saveTokenToCustomObject(tokenObject) {
 
     tokenCustomObject.custom.token = tokenObject.token;
     tokenCustomObject.custom.tokenExpiryTime = tokenExpiryTime.toString();
-    // tokenCustomObject.custom.serviceGeneralURL = config.serviceGeneralUrl;
     Transaction.commit();
 
 }
@@ -53,8 +51,7 @@ function generateToken(count) {
         // svc();
     }
     var responseBody = JSON.parse(result.object.text);
-    //time in ms
-    // var currentTime = new Date().getTime();
+   
     return {
         token: responseBody.accessToken,
         expiryTime: 3600
@@ -63,7 +60,6 @@ function generateToken(count) {
 }
 
 function getExistingToken() {
-    // var tokenCustomObjectType = config.customObjectType.AccessToken;
     var tokenCustomObject = CustomObjectMgr.getCustomObject(type, keyValue);
     var tokenObject;
 
