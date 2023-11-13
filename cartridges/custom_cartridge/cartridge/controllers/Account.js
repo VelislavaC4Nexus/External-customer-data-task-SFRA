@@ -101,10 +101,22 @@ server.replace(
         if (registrationForm.valid) {
             res.setViewData(registrationFormObj);
 
-            //my code
-            var result = postCustomer(registrationFormObj);
-            if(!result.ok){
-                return
+            //send post request with customer`s datata
+            var UUIDUtils = require('dw/util/UUIDUtils');
+            var indegrationID = UUIDUtils.createUUID();
+            // var result;
+            // var HookManager = require('dw/system/HookMgr');
+            // if (HookManager.hasHook('app.register.postCustomerToExternalService')) {
+            //     result = HookManager.callHook(
+            //         'app.register.postCustomerToExternalService',
+            //         'postCustomerToExternalService',
+            //         registrationFormObj,
+            //         indegrationID
+            //     );
+            // }
+            var result = postCustomerToExternalService(registrationFormObj, indegrationID);
+            if (!result.ok) {
+                return;
             }
 
             this.on('route:BeforeComplete', function (req, res) { // eslint-disable-line no-shadow
@@ -140,7 +152,7 @@ server.replace(
                             } else {
                                 // assign values to the profile
                                 var newCustomerProfile = newCustomer.getProfile();
-
+                                newCustomerProfile.getCustom().v_integrateId = indegrationID
                                 newCustomerProfile.firstName = registrationForm.firstName;
                                 newCustomerProfile.lastName = registrationForm.lastName;
                                 newCustomerProfile.phoneHome = registrationForm.phone;
@@ -201,16 +213,16 @@ server.replace(
     }
 );
 
-function postCustomer(registrationForm) {
-    var customerService = require("*/cartridge/scripts/customerService");
+function postCustomerToExternalService(registrationForm, indegrationID) {
+    var customerService = require("*/cartridge/scripts/initCustomerService");
     var svc = customerService.postCustomerData();
     var url = "https://json-server-app-707ded616226.herokuapp.com/recipes";
 
     var body = {};
-
+    body.id = indegrationID;
     body.firstName = registrationForm.firstName;
     body.lastName = registrationForm.lastName;
-    body.phoneHome = registrationForm.phoneHome;
+    body.phone = registrationForm.phone;
     body.email = registrationForm.email;
 
     var params = {};
@@ -218,7 +230,6 @@ function postCustomer(registrationForm) {
     params.URL = url;
     var result = svc.call(params);
     return result;
-
 }
 
 module.exports = server.exports();
