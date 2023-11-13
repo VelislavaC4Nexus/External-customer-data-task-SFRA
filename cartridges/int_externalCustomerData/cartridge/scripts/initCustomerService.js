@@ -51,8 +51,34 @@ function postCustomerData() {
 
     return CustomerService;
 }
+
+function editCustomerData() {
+    var tokenStorage = require('./tokenStorage');
+    var CustomerService = LocalServiceRegistry.createService("http.customer.service", {
+        createRequest: function (svc, params) {
+            var data = params;
+            svc.setRequestMethod("PUT");
+            svc.setURL(params.URL);
+            svc.addHeader('Content-Type', 'application/json');
+            svc.addHeader('Authorization', 'Bearer ' + tokenStorage.getToken());
+            return JSON.stringify(params.body);
+        },
+        parseResponse: function (svc, response) {
+            return response;
+        },
+        filterLogMessage: function (msg) {
+
+            return msg
+                .replace(/"id": "[0-9a-z]+"/, "\"id\": \"xxxxxxxxxx\"")
+                .replace(/"phone": "\d+"/, "\"phone\": \"xxxxxxxxxx\"")
+        }
+    });
+
+    return CustomerService;
+}
 module.exports = {
     postCustomerData: postCustomerData,
+    editCustomerData:editCustomerData,
     getToken: getToken
 
 };

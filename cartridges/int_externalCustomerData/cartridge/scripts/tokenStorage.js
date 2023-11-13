@@ -1,4 +1,5 @@
 'use strict';
+
 var CustomObjectMgr = require('dw/object/CustomObjectMgr');
 var Transaction = require('dw/system/Transaction');
 var type = 'TokenCustomObjectType';
