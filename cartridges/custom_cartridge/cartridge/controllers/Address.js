@@ -69,7 +69,6 @@ server.replace('SaveAddress', csrfProtection.validateAjaxRequest, function (req,
                         formInfo,
                         updatingAddress.custom.v_integrateAddressId,
                         profile.custom.v_integrateId
-
                     );
                 }
                 if (!result.ok) {
@@ -78,20 +77,6 @@ server.replace('SaveAddress', csrfProtection.validateAjaxRequest, function (req,
             } else {
                 var UUIDUtils = require('dw/util/UUIDUtils');
                 var integrationAddressId = UUIDUtils.createUUID();
-                var allAddressesFromAddressBook;
-                if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
-                    allAddressesFromAddressBook = HookManager.callHook(
-                        'app.register.requestCustomerToExternalService',
-                        'getCustomerAddressesFromExternalService',
-                        "GET"
-                    );
-                }
-                var allAddressessCurrentCustomer = Array.from(allAddressesFromAddressBook)
-                .filter(address=>address.customerId===profile.custom.v_integrateId)
-                
-                var isAddressExisting = allAddressessCurrentCustomer
-                    .some(address => address.addressTitle === formInfo.addressId);
-                if (!isAddressExisting) {
                     if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
                         result = HookManager.callHook(
                             'app.register.requestCustomerToExternalService',
@@ -99,13 +84,11 @@ server.replace('SaveAddress', csrfProtection.validateAjaxRequest, function (req,
                             formInfo,
                             integrationAddressId,
                             profile.custom.v_integrateId
-
                         );
                     }
                     if (!result.ok) {
                         return;
                     }
-                }
             }
 
             Transaction.wrap(function () {

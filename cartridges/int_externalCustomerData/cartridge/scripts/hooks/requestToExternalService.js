@@ -2,32 +2,6 @@
 
 var urlUtils = require('../utils/urlUtils');
 
-function getCustomersFromExternalService(method) {
-    var url = `${urlUtils.host}${urlUtils.customers}`
-    var customerService = require("*/cartridge/scripts/initCustomerService");
-    var svc = customerService.requestCustomerDataToExternalService();
-
-    var params = {};
-    params.URL = url;
-    params.method = method;
-    var result = svc.call(params);
-    
-    return JSON.parse(result.object.text);
-}
-
-function getCustomerAddressesFromExternalService(method) {
-    var url = `${urlUtils.host}${urlUtils.addressBook}`
-    var customerService = require("*/cartridge/scripts/initCustomerService");
-    var svc = customerService.requestCustomerDataToExternalService();
-
-    var params = {};
-    params.URL = url;
-    params.method = method;
-    var result = svc.call(params);
-    
-    return JSON.parse(result.object.text);
-}
-
 function requestCustomerToExternalService(method, registrationForm, integrationId) {
     var url;
     method === "POST" ? url = `${urlUtils.host}${urlUtils.customers}`
@@ -222,8 +196,6 @@ function addCustomersDataFromCheckoutToExternalService(customerId, shipments, bi
 }
 
 module.exports = {
-    getCustomersFromExternalService:getCustomersFromExternalService,
-    getCustomerAddressesFromExternalService:getCustomerAddressesFromExternalService,
     requestCustomerToExternalService: requestCustomerToExternalService,
     editCustomersAddressToExternalService: editCustomersAddressToExternalService,
     addCustomersAddressToExternalService: addCustomersAddressToExternalService,

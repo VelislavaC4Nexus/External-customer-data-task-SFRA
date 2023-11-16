@@ -100,36 +100,26 @@ server.replace(
         if (registrationForm.valid) {
             res.setViewData(registrationFormObj);
 
-            //check if customer alredy exist
-            var allCustomers;
             var HookManager = require('dw/system/HookMgr');
-            if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
-                allCustomers = HookManager.callHook(
-                    'app.register.requestCustomerToExternalService',
-                    'getCustomersFromExternalService',
-                    "GET",
-                );
-            }
-            var isCustomerExisting = Array.from(allCustomers).some(customer => customer.email === registrationFormObj.email);
+
             //send post request with customer`s datata to create new customer
             var UUIDUtils = require('dw/util/UUIDUtils');
             var integrationId = UUIDUtils.createUUID();
-            if (!isCustomerExisting) {
-                var result;
-                if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
-                    result = HookManager.callHook(
-                        'app.register.requestCustomerToExternalService',
-                        'requestCustomerToExternalService',
-                        "POST",
-                        registrationFormObj,
-                        integrationId
-                    );
-                }
-                if (!result.ok) {
-                    return;
-                }
-            }
 
+            var result;
+            if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
+                result = HookManager.callHook(
+                    'app.register.requestCustomerToExternalService',
+                    'requestCustomerToExternalService',
+                    "POST",
+                    registrationFormObj,
+                    integrationId
+                );
+            }
+            if (!result.ok) {
+                return;
+            }
+            
             this.on('route:BeforeComplete', function (req, res) { // eslint-disable-line no-shadow
                 var Transaction = require('dw/system/Transaction');
                 var accountHelpers = require('*/cartridge/scripts/helpers/accountHelpers');

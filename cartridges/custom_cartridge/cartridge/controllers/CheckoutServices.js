@@ -154,7 +154,7 @@ server.replace(
                 return;
             }
 
-            //add shipping addresses and billing addresses to external service
+            //add shipping addresses and billing address to external service
             var customer = req.currentCustomer.raw.profile;
             var billingAddress = currentBasket.billingAddress;
             var result;
@@ -229,7 +229,6 @@ server.replace(
                 billingAddress.setCountryCode(billingData.address.countryCode.value);
                 billingAddress.setPhone(billingData.phone.value);
             });
-
 
             // if there is no selected payment option and balance is greater than zero
             if (!paymentMethodID && currentBasket.totalGrossPrice.value > 0) {
