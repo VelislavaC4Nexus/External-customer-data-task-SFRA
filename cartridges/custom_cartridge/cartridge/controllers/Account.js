@@ -12,7 +12,6 @@ var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 var userLoggedIn = require('*/cartridge/scripts/middleware/userLoggedIn');
 var consentTracking = require('*/cartridge/scripts/middleware/consentTracking');
 
-
 /**
  * Checks if the email value entered is correct format 
  * @param {string} email - email string to check if valid
@@ -101,22 +100,34 @@ server.replace(
         if (registrationForm.valid) {
             res.setViewData(registrationFormObj);
 
-            //send post request with customer`s datata
+            //check if customer alredy exist
+            var allCustomers;
+            var HookManager = require('dw/system/HookMgr');
+            if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
+                allCustomers = HookManager.callHook(
+                    'app.register.requestCustomerToExternalService',
+                    'getCustomersFromExternalService',
+                    "GET",
+                );
+            }
+            var isCustomerExisting = Array.from(allCustomers).some(customer => customer.email === registrationFormObj.email);
+            //send post request with customer`s datata to create new customer
             var UUIDUtils = require('dw/util/UUIDUtils');
-            var indegrationId = UUIDUtils.createUUID();
-            // var result;
-            // var HookManager = require('dw/system/HookMgr');
-            // if (HookManager.hasHook('app.register.postCustomerToExternalService')) {
-            //     result = HookManager.callHook(
-            //         'app.register.postCustomerToExternalService',
-            //         'postCustomerToExternalService',
-            //         registrationFormObj,
-            //         indegrationID
-            //     );
-            // }
-            var result = postCustomerToExternalService(registrationFormObj, indegrationId);
-            if (!result.ok) {
-                return;
+            var integrationId = UUIDUtils.createUUID();
+            if (!isCustomerExisting) {
+                var result;
+                if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
+                    result = HookManager.callHook(
+                        'app.register.requestCustomerToExternalService',
+                        'requestCustomerToExternalService',
+                        "POST",
+                        registrationFormObj,
+                        integrationId
+                    );
+                }
+                if (!result.ok) {
+                    return;
+                }
             }
 
             this.on('route:BeforeComplete', function (req, res) { // eslint-disable-line no-shadow
@@ -152,7 +163,7 @@ server.replace(
                             } else {
                                 // assign values to the profile
                                 var newCustomerProfile = newCustomer.getProfile();
-                                newCustomerProfile.getCustom().v_integrateId = indegrationId
+                                newCustomerProfile.getCustom().v_integrateId = integrationId;
                                 newCustomerProfile.firstName = registrationForm.firstName;
                                 newCustomerProfile.lastName = registrationForm.lastName;
                                 newCustomerProfile.phoneHome = registrationForm.phone;
@@ -212,7 +223,6 @@ server.replace(
         return next();
     }
 );
-
 
 /**
  * Account-SaveProfile : The Account-SaveProfile endpoint is the endpoint that gets hit when a shopper has edited their profile
@@ -276,13 +286,24 @@ server.replace(
                     req.currentCustomer.profile.customerNo
                 );
                 var profile = customer.getProfile();
+
+
                 //send put request with customer`s datata
-                var integrateId = profile.custom.v_integrateId;
-                var result = editCustomerToExternalService(formInfo, integrateId);
+                var result;
+                var HookManager = require('dw/system/HookMgr');
+                if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
+                    result = HookManager.callHook(
+                        'app.register.requestCustomerToExternalService',
+                        'requestCustomerToExternalService',
+                        "PUT",
+                        formInfo,
+                        profile.custom.v_integrateId
+
+                    );
+                }
                 if (!result.ok) {
                     return;
                 }
-
 
                 var customerLogin;
                 var status;
@@ -353,43 +374,5 @@ server.replace(
     }
 );
 
-
-function postCustomerToExternalService(registrationForm, indegrationId) {
-    var customerService = require("*/cartridge/scripts/initCustomerService");
-    var svc = customerService.postCustomerData();
-    var url = "https://json-server-app-707ded616226.herokuapp.com/recipes";
-
-    var body = {};
-    body.id = indegrationId;
-    body.firstName = registrationForm.firstName;
-    body.lastName = registrationForm.lastName;
-    body.phone = registrationForm.phone;
-    body.email = registrationForm.email;
-
-    var params = {};
-    params.body = body;
-    params.URL = url;
-    var result = svc.call(params);
-    return result;
-}
-
-function editCustomerToExternalService(registrationForm, indegrationId) {
-    var customerService = require("*/cartridge/scripts/initCustomerService");
-    var svc = customerService.editCustomerData();
-    var url = `https://json-server-app-707ded616226.herokuapp.com/recipes/${indegrationId}`;
-
-    var body = {};
-    // body.id = indegrationID;
-    body.firstName = registrationForm.firstName;
-    body.lastName = registrationForm.lastName;
-    body.phone = registrationForm.phone;
-    body.email = registrationForm.email;
-
-    var params = {};
-    params.body = body;
-    params.URL = url;
-    var result = svc.call(params);
-    return result;
-}
-
 module.exports = server.exports();
+

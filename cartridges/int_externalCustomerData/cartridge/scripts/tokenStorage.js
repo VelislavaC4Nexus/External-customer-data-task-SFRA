@@ -2,8 +2,8 @@
 
 var CustomObjectMgr = require('dw/object/CustomObjectMgr');
 var Transaction = require('dw/system/Transaction');
-var type = 'TokenCustomObjectType';
-var keyValue = 'TokenCustomObjectType';
+var type = 'TOKEN_CUSTOM_OBJECT_TYPE';
+var keyValue = 'tokenCustomObjectType';
 
 function getToken() {
 
@@ -36,7 +36,6 @@ function saveTokenToCustomObject(tokenObject) {
     tokenCustomObject.custom.token = tokenObject.token;
     tokenCustomObject.custom.tokenExpiryTime = tokenExpiryTime.toString();
     Transaction.commit();
-
 }
 
 function generateToken(count) {
@@ -74,7 +73,6 @@ function getExistingToken() {
 
     }
     return null;
-
 }
 
 module.exports = {
