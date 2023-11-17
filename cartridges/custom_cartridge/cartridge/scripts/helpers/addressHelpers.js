@@ -16,6 +16,8 @@ function generateAddressName(address) {
  * @returns {boolean} - Boolean indicating if the address already exists
  */
 function checkIfAddressStored(address, storedAddresses) {
+
+
     for (var i = 0, l = storedAddresses.length; i < l; i++) {
         if (storedAddresses[i].address1 === address.address1
             && storedAddresses[i].postalCode === address.postalCode
@@ -40,7 +42,7 @@ function updateAddressFields(newAddress, address) {
     newAddress.setLastName(address.lastName || '');
     newAddress.setPhone(address.phone || '');
     newAddress.setPostalCode(address.postalCode || '');
-    if(address.integrateAddressId){
+    if (address.integrateAddressId) {
         newAddress.getCustom().v_integrateAddressId = address.integrateAddressId;
     }
 
@@ -70,6 +72,26 @@ function updateAddressFields(newAddress, address) {
  * @returns {void}
  */
 function saveAddress(address, customer, addressId) {
+    var HookManager = require('dw/system/HookMgr');
+    var UUIDUtils = require('dw/util/UUIDUtils');
+    var integrationAddressId = UUIDUtils.createUUID();
+    address.integrateAddressId = integrationAddressId;
+    var profileintegrateId = customer.raw.profile.custom.v_integrateId
+    var result;
+
+    if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
+        result = HookManager.callHook(
+            'app.register.requestCustomerToExternalService',
+            'addCustomersAddressToExternalService',
+            address,
+            integrationAddressId,
+            profileintegrateId
+        );
+    }
+    if (!result.ok) {
+        return;
+    }
+
     var Transaction = require('dw/system/Transaction');
 
     var addressBook = customer.raw.getProfile().getAddressBook();
