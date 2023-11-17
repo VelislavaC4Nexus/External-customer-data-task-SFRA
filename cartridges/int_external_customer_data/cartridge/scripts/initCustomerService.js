@@ -6,7 +6,7 @@ function getToken() {
     var getTokenService = LocalServiceRegistry.createService("http.customer.service", {
         createRequest: function (svc, params) {
             svc.setRequestMethod("POST");
-            svc.setURL(params.URL);
+            svc.setURL(`${svc.configuration.credential.URL}${params.URL}`);
             svc.addHeader('Content-Type', 'application/json');
             return JSON.stringify({
                 email: svc.configuration.credential.user,
@@ -17,6 +17,12 @@ function getToken() {
             var data = response;
             return response;
         },
+        filterLogMessage: function (msg) {
+            return msg
+                .replace(/("accessToken": ")[^"]+"/, "\"accessToken\": \"xxxxxxxxxx\"")
+                .replace(/("email": ")[^"@]+@[^"]+"/, "\"email\": \"xxxxxxxxxx\"")
+                .replace(/("username": ")[^"]+"/, "\"username\": \"xxxxxxxxxx\"")
+        }
     });
     return getTokenService;
 }
@@ -26,7 +32,7 @@ function requestCustomerDataToExternalService() {
     var CustomerService = LocalServiceRegistry.createService("http.customer.service", {
         createRequest: function (svc, params) {
             svc.setRequestMethod(params.method);
-            svc.setURL(params.URL);
+            svc.setURL(`${svc.configuration.credential.URL}${params.URL}`);
             svc.addHeader('Content-Type', 'application/json');
             svc.addHeader('Authorization', 'Bearer ' + tokenStorage.getToken());
             return JSON.stringify(params.body);
@@ -43,7 +49,7 @@ function requestCustomerDataToExternalService() {
 }
 
 module.exports = {
-    requestCustomerDataToExternalService:requestCustomerDataToExternalService,
+    requestCustomerDataToExternalService: requestCustomerDataToExternalService,
     getToken: getToken
 
 };

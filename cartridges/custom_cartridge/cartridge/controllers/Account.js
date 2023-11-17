@@ -7,7 +7,7 @@
 var server = require('server');
 server.extend(module.superModule);
 
-
+var HookManager = require('dw/system/HookMgr');
 var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 var userLoggedIn = require('*/cartridge/scripts/middleware/userLoggedIn');
 var consentTracking = require('*/cartridge/scripts/middleware/consentTracking');
@@ -99,9 +99,6 @@ server.replace(
 
         if (registrationForm.valid) {
             res.setViewData(registrationFormObj);
-
-            var HookManager = require('dw/system/HookMgr');
-
             //send post request with customer`s datata to create new customer
             var UUIDUtils = require('dw/util/UUIDUtils');
             var integrationId = UUIDUtils.createUUID();
@@ -280,7 +277,6 @@ server.replace(
 
                 //send put request with customer`s datata
                 var result;
-                var HookManager = require('dw/system/HookMgr');
                 if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
                     result = HookManager.callHook(
                         'app.register.requestCustomerToExternalService',

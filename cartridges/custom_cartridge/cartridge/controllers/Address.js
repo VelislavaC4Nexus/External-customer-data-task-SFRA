@@ -9,6 +9,7 @@ server.extend(module.superModule);
 
 var URLUtils = require('dw/web/URLUtils');
 var Resource = require('dw/web/Resource');
+var HookManager = require('dw/system/HookMgr');
 var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 var userLoggedIn = require('*/cartridge/scripts/middleware/userLoggedIn');
 var consentTracking = require('*/cartridge/scripts/middleware/consentTracking');
@@ -58,7 +59,6 @@ server.replace('SaveAddress', csrfProtection.validateAjaxRequest, function (req,
 
             //request to external data
             var profile = customer.getProfile();
-            var HookManager = require('dw/system/HookMgr');
             if (req.querystring.addressId) {
                 var updatingAddress = addressBook.getAddress(req.querystring.addressId);
                 var result;
@@ -174,7 +174,6 @@ server.replace('DeleteAddress', userLoggedIn.validateLoggedInAjax, function (req
     //delete customer`s address from external service
     var integrationAddressId = address.custom.v_integrateAddressId;
     var result;
-    var HookManager = require('dw/system/HookMgr');
     if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
         result = HookManager.callHook(
             'app.register.requestCustomerToExternalService',

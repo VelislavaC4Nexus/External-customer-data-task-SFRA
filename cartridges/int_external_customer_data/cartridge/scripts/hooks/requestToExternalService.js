@@ -1,11 +1,11 @@
 'use strict';
 
-var urlUtils = require('../utils/urlUtils');
+var urlUtils = require('../utils/constantsUtils');
 
 function requestCustomerToExternalService(method, registrationForm, integrationId) {
     var url;
-    method === "POST" ? url = `${urlUtils.host}${urlUtils.customers}`
-        : url = `${urlUtils.host}${urlUtils.customers}/${integrationId}`
+    method === "POST" ? url = `${urlUtils.customers}`
+        : url = `${urlUtils.customers}/${integrationId}`
 
     var customerService = require("*/cartridge/scripts/initCustomerService");
     var svc = customerService.requestCustomerDataToExternalService();
@@ -30,7 +30,7 @@ function addCustomersAddressToExternalService(formInfo, integrationAddressId, cu
 
     var customerService = require("*/cartridge/scripts/initCustomerService");
     var svc = customerService.requestCustomerDataToExternalService();
-    var url = `${urlUtils.host}${urlUtils.addressBook}`
+    var url = `${urlUtils.addressBook}`
 
     var body = {};
 
@@ -67,7 +67,7 @@ function editCustomersAddressToExternalService(formInfo, updatingAddressId, cust
 
     var customerService = require("*/cartridge/scripts/initCustomerService");
     var svc = customerService.requestCustomerDataToExternalService();
-    var url = `${urlUtils.host}${urlUtils.addressBook}/${updatingAddressId}`;
+    var url = `${urlUtils.addressBook}/${updatingAddressId}`;
     var body = {};
 
     body.addressTitle = formInfo.addressId;
@@ -94,7 +94,7 @@ function deleteCustomersAddressFromExternalService(integrationAddressId) {
 
     var customerService = require("*/cartridge/scripts/initCustomerService");
     var svc = customerService.requestCustomerDataToExternalService();
-    var url = `${urlUtils.host}${urlUtils.addressBook}/${integrationAddressId}`;
+    var url = `${urlUtils.addressBook}/${integrationAddressId}`;
     var body = {};
 
     var params = {};
@@ -109,7 +109,7 @@ function addGuestCustomersDataFromCheckoutToExternalService(customerEmail, shipm
 
     var customerService = require("*/cartridge/scripts/initCustomerService");
     var svc = customerService.requestCustomerDataToExternalService();
-    var url = `${urlUtils.host}${urlUtils.guestCustomers}`;
+    var url = `${urlUtils.guestCustomers}`;
 
     var body = {};
     body.customerEmail = customerEmail;
@@ -154,7 +154,7 @@ function addCustomersDataFromCheckoutToExternalService(customerId, shipments, bi
 
     var customerService = require("*/cartridge/scripts/initCustomerService");
     var svc = customerService.requestCustomerDataToExternalService();
-    var url = `${urlUtils.host}${urlUtils.shippingAndBillingAddress}`;
+    var url = `${urlUtils.shippingAndBillingAddress}`;
 
     var body = {};
     body.customerId = customerId;

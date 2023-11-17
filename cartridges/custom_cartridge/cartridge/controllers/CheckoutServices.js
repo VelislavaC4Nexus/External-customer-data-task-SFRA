@@ -126,7 +126,6 @@ server.replace(
 
         this.on('route:BeforeComplete', function (req, res) { // eslint-disable-line no-shadow
             var BasketMgr = require('dw/order/BasketMgr');
-            var HookMgr = require('dw/system/HookMgr');
             var PaymentMgr = require('dw/order/PaymentMgr');
             var Transaction = require('dw/system/Transaction');
             var AccountModel = require('*/cartridge/models/account');
@@ -160,7 +159,6 @@ server.replace(
             var result;
             if (customer) {
                 var customerIntegrateId = customer.custom.v_integrateId;
-                var HookManager = require('dw/system/HookMgr');
                 if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
                     result = HookManager.callHook(
                         'app.register.requestCustomerToExternalService',
