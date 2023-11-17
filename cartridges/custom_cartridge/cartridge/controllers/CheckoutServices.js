@@ -8,7 +8,7 @@ var server = require('server');
 server.extend(module.superModule);
 
 var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
-var HookManager = require('dw/system/HookMgr');
+
 
 
 /**
@@ -50,6 +50,7 @@ server.replace(
     csrfProtection.validateAjaxRequest,
     function (req, res, next) {
         var PaymentManager = require('dw/order/PaymentMgr');
+        var HookManager = require('dw/system/HookMgr');
         var Resource = require('dw/web/Resource');
         var COHelpers = require('*/cartridge/scripts/checkout/checkoutHelpers');
 
@@ -127,6 +128,7 @@ server.replace(
 
         this.on('route:BeforeComplete', function (req, res) { // eslint-disable-line no-shadow
             var BasketMgr = require('dw/order/BasketMgr');
+            var HookManager = require('dw/system/HookMgr');
             var PaymentMgr = require('dw/order/PaymentMgr');
             var Transaction = require('dw/system/Transaction');
             var AccountModel = require('*/cartridge/models/account');
@@ -349,6 +351,10 @@ server.replace(
         return next();
     }
 );
+
+// server.prepend('PlaceOrder', server.middleware.https, function (req, res, next) {
+//     var addressHelpers = require('*/cartridge/scripts/helpers/addresHelpersExtend');
+// });
 
 
 module.exports = server.exports();
