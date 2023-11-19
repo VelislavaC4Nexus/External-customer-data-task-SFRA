@@ -13,6 +13,7 @@ var HookManager = require('dw/system/HookMgr');
 var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 var userLoggedIn = require('*/cartridge/scripts/middleware/userLoggedIn');
 var consentTracking = require('*/cartridge/scripts/middleware/consentTracking');
+var hookUtils = require('../scripts/utils/hookUtils');
 
 
 
@@ -65,14 +66,18 @@ server.replace('SaveAddress', csrfProtection.validateAjaxRequest, function (req,
                 if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
                     result = HookManager.callHook(
                         'app.register.requestCustomerToExternalService',
-                        'editCustomersAddressToExternalService',
+                        hookUtils.editCustomersAddressToExternalService,
                         formInfo,
                         updatingAddress.custom.v_integrateAddressId,
                         profile.custom.v_integrateId
                     );
                 }
                 if (!result.ok) {
-                    return;
+                    res.setStatusCode(500);
+                    res.json({
+                        success: false,
+                        errorMessage: Resource.msg('message.error.external.service', 'error', null)
+                    })
                 }
             } else {
                 var UUIDUtils = require('dw/util/UUIDUtils');
@@ -80,14 +85,18 @@ server.replace('SaveAddress', csrfProtection.validateAjaxRequest, function (req,
                     if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
                         result = HookManager.callHook(
                             'app.register.requestCustomerToExternalService',
-                            'addCustomersAddressToExternalService',
+                            hookUtils.addCustomersAddressToExternalService,
                             formInfo,
                             integrationAddressId,
                             profile.custom.v_integrateId
                         );
                     }
                     if (!result.ok) {
-                        return;
+                        res.setStatusCode(500);
+                        res.json({
+                            success: false,
+                            errorMessage: Resource.msg('message.error.external.service', 'error', null)
+                        })
                     }
             }
 
@@ -177,7 +186,7 @@ server.replace('DeleteAddress', userLoggedIn.validateLoggedInAjax, function (req
     if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
         result = HookManager.callHook(
             'app.register.requestCustomerToExternalService',
-            'deleteCustomersAddressFromExternalService',
+            hookUtils.deleteCustomersAddressFromExternalService,
             integrationAddressId
         );
     }

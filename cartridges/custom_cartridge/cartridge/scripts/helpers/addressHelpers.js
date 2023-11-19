@@ -47,17 +47,22 @@ addressHelpers.saveAddress = function (address, customer, addressId) {
             profileintegrateId
         );
     }
-    if (!result.ok) {
-        return;
+    if (result.ok) {
+        var Transaction = require('dw/system/Transaction');
+
+        var addressBook = customer.raw.getProfile().getAddressBook();
+        Transaction.wrap(function () {
+            var newAddress = addressBook.createAddress(addressId);
+            addressHelpers.updateAddressFields(newAddress, address);
+        });
+    }else{
+        var Resource = require('dw/web/Resource');
+        res.setStatusCode(500);
+        res.json({
+            success: false,
+            errorMessage: Resource.msg('message.error.external.service', 'error', null)
+        });
     }
-
-    var Transaction = require('dw/system/Transaction');
-
-    var addressBook = customer.raw.getProfile().getAddressBook();
-    Transaction.wrap(function () {
-        var newAddress = addressBook.createAddress(addressId);
-        addressHelpers.updateAddressFields(newAddress, address);
-    });
 }
 
-module.exports = addressHelpers
+module.exports = addressHelpers;

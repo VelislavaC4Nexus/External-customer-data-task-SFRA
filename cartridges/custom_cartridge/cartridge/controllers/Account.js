@@ -11,6 +11,7 @@ var HookManager = require('dw/system/HookMgr');
 var csrfProtection = require('*/cartridge/scripts/middleware/csrf');
 var userLoggedIn = require('*/cartridge/scripts/middleware/userLoggedIn');
 var consentTracking = require('*/cartridge/scripts/middleware/consentTracking');
+var hookUtils = require('../scripts/utils/hookUtils');
 
 /**
  * Checks if the email value entered is correct format 
@@ -22,8 +23,8 @@ function validateEmail(email) {
     return regex.test(email);
 }
 
-/**
- * Account-SubmitRegistration : The Account-SubmitRegistration endpoint is the endpoint that gets hit when a shopper submits their registration for a new account
+/** 
+ *  Account-SubmitRegistration : The Account-SubmitRegistration endpoint is the endpoint that gets hit when a shopper submits their registration for a new account
  * @name Base/Account-SubmitRegistration
  * @function
  * @memberof Account
@@ -104,103 +105,111 @@ server.replace(
             var integrationId = UUIDUtils.createUUID();
 
             var result;
+
             if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
                 result = HookManager.callHook(
                     'app.register.requestCustomerToExternalService',
-                    'requestCustomerToExternalService',
+                    hookUtils.registerAndEditCustomerToExternalService,
                     "POST",
                     registrationFormObj,
                     integrationId
                 );
             }
-            if (!result.ok) {
-                return;
-            }
-            
-            this.on('route:BeforeComplete', function (req, res) { // eslint-disable-line no-shadow
-                var Transaction = require('dw/system/Transaction');
-                var accountHelpers = require('*/cartridge/scripts/helpers/accountHelpers');
-                var authenticatedCustomer;
-                var serverError;
+            if (result.ok) {
 
-                // getting variables for the BeforeComplete function
-                var registrationForm = res.getViewData(); // eslint-disable-line
+                this.on('route:BeforeComplete', function (req, res) { // eslint-disable-line no-shadow
+                    var Transaction = require('dw/system/Transaction');
+                    var accountHelpers = require('*/cartridge/scripts/helpers/accountHelpers');
+                    var authenticatedCustomer;
+                    var serverError;
 
-                if (registrationForm.validForm) {
-                    var login = registrationForm.email;
-                    var password = registrationForm.password;
+                    // getting variables for the BeforeComplete function
+                    var registrationForm = res.getViewData(); // eslint-disable-line
 
-                    // attempt to create a new user and log that user in.
-                    try {
-                        Transaction.wrap(function () {
-                            var error = {};
-                            var newCustomer = CustomerMgr.createCustomer(login, password);
+                    if (registrationForm.validForm) {
+                        var login = registrationForm.email;
+                        var password = registrationForm.password;
 
-                            var authenticateCustomerResult = CustomerMgr.authenticateCustomer(login, password);
-                            if (authenticateCustomerResult.status !== 'AUTH_OK') {
-                                error = { authError: true, status: authenticateCustomerResult.status };
-                                throw error;
-                            }
+                        // attempt to create a new user and log that user in.
+                        try {
+                            Transaction.wrap(function () {
+                                var error = {};
+                                var newCustomer = CustomerMgr.createCustomer(login, password);
 
-                            authenticatedCustomer = CustomerMgr.loginCustomer(authenticateCustomerResult, false);
+                                var authenticateCustomerResult = CustomerMgr.authenticateCustomer(login, password);
+                                if (authenticateCustomerResult.status !== 'AUTH_OK') {
+                                    error = { authError: true, status: authenticateCustomerResult.status };
+                                    throw error;
+                                }
 
-                            if (!authenticatedCustomer) {
-                                error = { authError: true, status: authenticateCustomerResult.status };
-                                throw error;
+                                authenticatedCustomer = CustomerMgr.loginCustomer(authenticateCustomerResult, false);
+
+                                if (!authenticatedCustomer) {
+                                    error = { authError: true, status: authenticateCustomerResult.status };
+                                    throw error;
+                                } else {
+                                    // assign values to the profile
+                                    var newCustomerProfile = newCustomer.getProfile();
+                                    //set integrationId to new customer
+                                    newCustomerProfile.getCustom().v_integrateId = integrationId;
+                                    newCustomerProfile.firstName = registrationForm.firstName;
+                                    newCustomerProfile.lastName = registrationForm.lastName;
+                                    newCustomerProfile.phoneHome = registrationForm.phone;
+                                    newCustomerProfile.email = registrationForm.email;
+                                }
+                            });
+                        } catch (e) {
+                            if (e.authError) {
+                                serverError = true;
                             } else {
-                                // assign values to the profile
-                                var newCustomerProfile = newCustomer.getProfile();
-                                newCustomerProfile.getCustom().v_integrateId = integrationId;
-                                newCustomerProfile.firstName = registrationForm.firstName;
-                                newCustomerProfile.lastName = registrationForm.lastName;
-                                newCustomerProfile.phoneHome = registrationForm.phone;
-                                newCustomerProfile.email = registrationForm.email;
+                                registrationForm.validForm = false;
+                                registrationForm.form.customer.email.valid = false;
+                                registrationForm.form.customer.emailconfirm.valid = false;
+                                registrationForm.form.customer.email.error =
+                                    Resource.msg('error.message.username.invalid', 'forms', null);
                             }
-                        });
-                    } catch (e) {
-                        if (e.authError) {
-                            serverError = true;
-                        } else {
-                            registrationForm.validForm = false;
-                            registrationForm.form.customer.email.valid = false;
-                            registrationForm.form.customer.emailconfirm.valid = false;
-                            registrationForm.form.customer.email.error =
-                                Resource.msg('error.message.username.invalid', 'forms', null);
                         }
                     }
-                }
 
-                delete registrationForm.password;
-                delete registrationForm.passwordConfirm;
-                formErrors.removeFormValues(registrationForm.form);
+                    delete registrationForm.password;
+                    delete registrationForm.passwordConfirm;
+                    formErrors.removeFormValues(registrationForm.form);
 
-                if (serverError) {
-                    res.setStatusCode(500);
-                    res.json({
-                        success: false,
-                        errorMessage: Resource.msg('error.message.unable.to.create.account', 'login', null)
-                    });
+                    if (serverError) {
+                        res.setStatusCode(500);
+                        res.json({
+                            success: false,
+                            errorMessage: Resource.msg('error.message.unable.to.create.account', 'login', null)
+                        });
 
-                    return;
-                }
+                        return;
+                    }
 
-                if (registrationForm.validForm) {
-                    // send a registration email
-                    accountHelpers.sendCreateAccountEmail(authenticatedCustomer.profile);
+                    if (registrationForm.validForm) {
+                        // send a registration email
+                        accountHelpers.sendCreateAccountEmail(authenticatedCustomer.profile);
 
-                    res.setViewData({ authenticatedCustomer: authenticatedCustomer });
-                    res.json({
-                        success: true,
-                        redirectUrl: accountHelpers.getLoginRedirectURL(req.querystring.rurl, req.session.privacyCache, true)
-                    });
+                        res.setViewData({ authenticatedCustomer: authenticatedCustomer });
+                        res.json({
+                            success: true,
+                            redirectUrl: accountHelpers.getLoginRedirectURL(req.querystring.rurl, req.session.privacyCache, true)
+                        });
 
-                    req.session.privacyCache.set('args', null);
-                } else {
-                    res.json({
-                        fields: formErrors.getFormErrors(registrationForm)
-                    });
-                }
-            });
+                        req.session.privacyCache.set('args', null);
+                    } else {
+                        res.json({
+                            fields: formErrors.getFormErrors(registrationForm)
+                        });
+                    }
+                });
+
+            } else {
+                res.setStatusCode(500);
+                res.json({
+                    success: false,
+                    errorMessage: Resource.msg('message.error.external.service', 'error', null)
+                });
+            }
         } else {
             res.json({
                 fields: formErrors.getFormErrors(registrationForm)
@@ -266,7 +275,6 @@ server.replace(
         if (profileForm.valid) {
             res.setViewData(result);
 
-
             this.on('route:BeforeComplete', function (req, res) { // eslint-disable-line no-shadow
                 var formInfo = res.getViewData();
                 var customer = CustomerMgr.getCustomerByCustomerNumber(
@@ -280,74 +288,83 @@ server.replace(
                 if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
                     result = HookManager.callHook(
                         'app.register.requestCustomerToExternalService',
-                        'requestCustomerToExternalService',
+                        hookUtils.registerAndEditCustomerToExternalService,
                         "PUT",
                         formInfo,
                         profile.custom.v_integrateId
 
                     );
                 }
-                if (!result.ok) {
-                    return;
-                }
 
-                var customerLogin;
-                var status;
+                if (result.ok) {
 
-                Transaction.wrap(function () {
-                    status = profile.credentials.setPassword(
-                        formInfo.password,
-                        formInfo.password,
-                        true
-                    );
+                    var customerLogin;
+                    var status;
 
-                    if (status.error) {
-                        formInfo.profileForm.login.password.valid = false;
-                        formInfo.profileForm.login.password.error =
-                            Resource.msg('error.message.currentpasswordnomatch', 'forms', null);
-                    } else {
-                        customerLogin = profile.credentials.setLogin(
-                            formInfo.email,
-                            formInfo.password
-                        );
-                    }
-                });
-
-                delete formInfo.password;
-                delete formInfo.confirmEmail;
-
-                if (customerLogin) {
                     Transaction.wrap(function () {
-                        profile.setFirstName(formInfo.firstName);
-                        profile.setLastName(formInfo.lastName);
-                        profile.setEmail(formInfo.email);
-                        profile.setPhoneHome(formInfo.phone);
+                        status = profile.credentials.setPassword(
+                            formInfo.password,
+                            formInfo.password,
+                            true
+                        );
+
+                        if (status.error) {
+                            formInfo.profileForm.login.password.valid = false;
+                            formInfo.profileForm.login.password.error =
+                                Resource.msg('error.message.currentpasswordnomatch', 'forms', null);
+                        } else {
+                            customerLogin = profile.credentials.setLogin(
+                                formInfo.email,
+                                formInfo.password
+                            );
+                        }
                     });
 
-                    // Send account edited email
-                    accountHelpers.sendAccountEditedEmail(customer.profile);
+                    delete formInfo.password;
+                    delete formInfo.confirmEmail;
 
-                    delete formInfo.profileForm;
-                    delete formInfo.email;
+                    if (customerLogin) {
+                        Transaction.wrap(function () {
+                            profile.setFirstName(formInfo.firstName);
+                            profile.setLastName(formInfo.lastName);
+                            profile.setEmail(formInfo.email);
+                            profile.setPhoneHome(formInfo.phone);
+                        });
 
-                    res.json({
-                        success: true,
-                        redirectUrl: URLUtils.url('Account-Show').toString()
-                    });
-                } else {
-                    if (!status.error) {
-                        formInfo.profileForm.customer.email.valid = false;
-                        formInfo.profileForm.customer.email.error =
-                            Resource.msg('error.message.username.invalid', 'forms', null);
+                        // Send account edited email
+                        accountHelpers.sendAccountEditedEmail(customer.profile);
+
+                        delete formInfo.profileForm;
+                        delete formInfo.email;
+
+                        res.json({
+                            success: true,
+                            redirectUrl: URLUtils.url('Account-Show').toString()
+                        });
+                    } else {
+                        if (!status.error) {
+                            formInfo.profileForm.customer.email.valid = false;
+                            formInfo.profileForm.customer.email.error =
+                                Resource.msg('error.message.username.invalid', 'forms', null);
+                        }
+
+                        delete formInfo.profileForm;
+                        delete formInfo.email;
+
+                        res.json({
+                            success: false,
+                            fields: formErrors.getFormErrors(profileForm)
+                        });
                     }
 
-                    delete formInfo.profileForm;
-                    delete formInfo.email;
+                } else {
 
+                    res.setStatusCode(501);
                     res.json({
                         success: false,
-                        fields: formErrors.getFormErrors(profileForm)
+                        errorMessage: Resource.msg('message.error.external.service', 'error', null)
                     });
+
                 }
             });
         } else {

@@ -22,7 +22,7 @@ function requestCustomerToExternalService(method, registrationForm, integrationI
     params.body = body;
     params.URL = url;
     params.method = method
-    var result = svc.call(params);
+    var result = svc.call();
     return result;
 }
 

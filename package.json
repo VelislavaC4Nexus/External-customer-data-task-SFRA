@@ -115,9 +115,9 @@
     "ie >= 10"
   ],
   "paths": {
-    "base": "./cartridges/app_storefront_base/"
+    "base": "../storefront-reference-architecture-master/cartridges/app_storefront_base/"
   },
-  "packageName": "./cartridges/app_storefront_base/",
+  "packageName": "custom_cartridge",
   "babel": {
     "presets": [
       "env"

@@ -46,8 +46,9 @@ function generateToken(count) {
     var result = svc.call(params);
 
     if (!result.ok) {
-        // retry
-        // svc();
+        var Logger = require('dw/system/Logger');
+        var Resource = require('dw/web/Resource');
+        Logger.error(Resource.msg('message.error.external.service', 'error', null));
     }
     var responseBody = JSON.parse(result.object.text);
 
