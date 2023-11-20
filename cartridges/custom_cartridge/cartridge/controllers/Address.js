@@ -58,86 +58,78 @@ server.replace('SaveAddress', csrfProtection.validateAjaxRequest, function (req,
         this.on('route:BeforeComplete', function () { // eslint-disable-line no-shadow
             var formInfo = res.getViewData();
 
-            //request to external data
+            //save or edit customer`s address to external db
             var profile = customer.getProfile();
-            if (req.querystring.addressId) {
-                var updatingAddress = addressBook.getAddress(req.querystring.addressId);
-                var result;
-                if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
-                    result = HookManager.callHook(
-                        'app.register.requestCustomerToExternalService',
-                        hookUtils.editCustomersAddressToExternalService,
-                        formInfo,
-                        updatingAddress.custom.v_integrateAddressId,
-                        profile.custom.v_integrateId
-                    );
+            var hookFunction;
+            var result;
+            var addressIntegrationId;
+
+            if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
+                if (req.querystring.addressId) {
+                    hookFunction = hookUtils.editCustomersAddressToExternalService;
+                    var updatingAddress = addressBook.getAddress(req.querystring.addressId);
+                    addressIntegrationId = updatingAddress.custom.v_integrateAddressId;
+                } else {
+                    hookFunction = hookUtils.addCustomersAddressToExternalService;
+                    var UUIDUtils = require('dw/util/UUIDUtils');
+                    addressIntegrationId = UUIDUtils.createUUID();
                 }
-                if (!result.ok) {
-                    res.setStatusCode(500);
-                    res.json({
-                        success: false,
-                        errorMessage: Resource.msg('message.error.external.service', 'error', null)
-                    })
-                }
-            } else {
-                var UUIDUtils = require('dw/util/UUIDUtils');
-                var integrationAddressId = UUIDUtils.createUUID();
-                    if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
-                        result = HookManager.callHook(
-                            'app.register.requestCustomerToExternalService',
-                            hookUtils.addCustomersAddressToExternalService,
-                            formInfo,
-                            integrationAddressId,
-                            profile.custom.v_integrateId
-                        );
+                result = HookManager.callHook(
+                    'app.register.requestCustomerToExternalService',
+                    hookFunction,
+                    formInfo,
+                    addressIntegrationId,
+                    profile.custom.v_integrateId
+                );
+            }
+            if (result.ok) {
+
+                Transaction.wrap(function () {
+                    var address = null;
+                    if (formInfo.addressId.equals(req.querystring.addressId) || !addressBook.getAddress(formInfo.addressId)) {
+                        address = req.querystring.addressId
+                            ? addressBook.getAddress(req.querystring.addressId)
+                            : addressBook.createAddress(formInfo.addressId);
                     }
-                    if (!result.ok) {
-                        res.setStatusCode(500);
+
+                    if (address) {
+                        if (req.querystring.addressId) {
+                            address.setID(formInfo.addressId);
+                        }
+
+                        // Save form's address
+                        //extend form with integrateAddressId
+                        if (!address.custom.v_integrateAddressId) {
+                            formInfo.integrateAddressId = addressIntegrationId;
+                        }
+                        addressHelpers.updateAddressFields(address, formInfo);
+
+                        // Send account edited email
+                        accountHelpers.sendAccountEditedEmail(customer.profile);
+
+                        res.json({
+                            success: true,
+                            redirectUrl: URLUtils.url('Address-List').toString()
+                        });
+                    } else {
+                        formInfo.addressForm.valid = false;
+                        formInfo.addressForm.addressId.valid = false;
+                        formInfo.addressForm.addressId.error =
+                            Resource.msg('error.message.idalreadyexists', 'forms', null);
                         res.json({
                             success: false,
-                            errorMessage: Resource.msg('message.error.external.service', 'error', null)
-                        })
+                            fields: formErrors.getFormErrors(addressForm)
+                        });
                     }
+                });
+
+            } else {
+                res.setStatusCode(500);
+                res.json({
+                    success: false,
+                    errorMessage: Resource.msg('message.error.external.service', 'error', null)
+                });
             }
-
-            Transaction.wrap(function () {
-                var address = null;
-                if (formInfo.addressId.equals(req.querystring.addressId) || !addressBook.getAddress(formInfo.addressId)) {
-                    address = req.querystring.addressId
-                        ? addressBook.getAddress(req.querystring.addressId)
-                        : addressBook.createAddress(formInfo.addressId);
-                }
-
-                if (address) {
-                    if (req.querystring.addressId) {
-                        address.setID(formInfo.addressId);
-                    }
-
-                    // Save form's address
-                    //extend form with integrateAddressId
-                    if (!address.custom.v_integrateAddressId) {
-                        formInfo.integrateAddressId = integrationAddressId;
-                    }
-                    addressHelpers.updateAddressFields(address, formInfo);
-
-                    // Send account edited email
-                    accountHelpers.sendAccountEditedEmail(customer.profile);
-
-                    res.json({
-                        success: true,
-                        redirectUrl: URLUtils.url('Address-List').toString()
-                    });
-                } else {
-                    formInfo.addressForm.valid = false;
-                    formInfo.addressForm.addressId.valid = false;
-                    formInfo.addressForm.addressId.error =
-                        Resource.msg('error.message.idalreadyexists', 'forms', null);
-                    res.json({
-                        success: false,
-                        fields: formErrors.getFormErrors(addressForm)
-                    });
-                }
-            });
         });
     } else {
         res.json({
@@ -180,30 +172,37 @@ server.replace('DeleteAddress', userLoggedIn.validateLoggedInAjax, function (req
     var address = addressBook.getAddress(addressId);
     var UUID = address.getUUID();
 
-    //delete customer`s address from external service
-    var integrationAddressId = address.custom.v_integrateAddressId;
-    var result;
-    if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
-        result = HookManager.callHook(
-            'app.register.requestCustomerToExternalService',
-            hookUtils.deleteCustomersAddressFromExternalService,
-            integrationAddressId
-        );
-    }
-    if (!result.ok) {
-        return;
-    }
+
 
     this.on('route:BeforeComplete', function () { // eslint-disable-line no-shadow
+
         var length;
-        Transaction.wrap(function () {
-            addressBook.removeAddress(address);
-            length = addressBook.getAddresses().length;
-            if (isDefault && length > 0) {
-                var newDefaultAddress = addressBook.getAddresses()[0];
-                addressBook.setPreferredAddress(newDefaultAddress);
-            }
-        });
+        //delete customer`s address from external service
+        var integrationAddressId = address.custom.v_integrateAddressId;
+        var result;
+        if (HookManager.hasHook('app.register.requestCustomerToExternalService')) {
+            result = HookManager.callHook(
+                'app.register.requestCustomerToExternalService',
+                hookUtils.deleteCustomersAddressFromExternalService,
+                integrationAddressId
+            );
+        }
+        if (result.ok) {
+            Transaction.wrap(function () {
+                addressBook.removeAddress(address);
+                length = addressBook.getAddresses().length;
+                if (isDefault && length > 0) {
+                    var newDefaultAddress = addressBook.getAddresses()[0];
+                    addressBook.setPreferredAddress(newDefaultAddress);
+                }
+            });
+        } else {
+            res.setStatusCode(500);
+            res.json({
+                success: false,
+                errorMessage: Resource.msg('message.error.external.service', 'error', null)
+            });
+        }
 
         // Send account edited email
         accountHelpers.sendAccountEditedEmail(customer.profile);
