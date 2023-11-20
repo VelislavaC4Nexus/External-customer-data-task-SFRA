@@ -1,7 +1,6 @@
 'use strict';
 
 var url;
-var isDefault;
 
 /**
  * Create an alert to display the error message
@@ -46,7 +45,6 @@ base.submitAddress = function () {
                 if (err.responseJSON.redirectUrl) {
                     window.location.href = err.responseJSON.redirectUrl;
                 } else {
-                    console.log('createErrorNotification Address');
                     createErrorNotification(err.responseJSON.errorMessage);
                 }
                 $form.spinner().stop();

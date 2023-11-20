@@ -6,7 +6,6 @@ var base = require('base/profile/profile');
 
 base.submitProfile = function () {
     $('form.edit-profile-form').submit(function (e) {
-        console.log("CUSTOM");
         var $form = $(this);
         e.preventDefault();
         var url = $form.attr('action');
@@ -29,7 +28,6 @@ base.submitProfile = function () {
                 if (err.responseJSON.redirectUrl) {
                     window.location.href = err.responseJSON.redirectUrl;
                 } else {
-                    console.log(err.responseJSON.errorMessage);
                     createErrorNotification($('.error-messaging'), err.responseJSON.errorMessage);
                 }
                 $form.spinner().stop();
