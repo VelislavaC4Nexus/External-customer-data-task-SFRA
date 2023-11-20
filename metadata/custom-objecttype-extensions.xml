@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata xmlns="http://www.demandware.com/xml/impex/metadata/2006-10-31">
+    <custom-type type-id="TOKEN_CUSTOM_OBJECT_TYPE">
+        <display-name xml:lang="x-default">Token Custom Object Type</display-name>
+        <description xml:lang="x-default">Store Token</description>
+        <staging-mode>no-staging</staging-mode>
+        <storage-scope>site</storage-scope>
+        <key-definition attribute-id="tokenCustomObjectType">
+            <type>string</type>
+            <min-length>0</min-length>
+        </key-definition>
+        <attribute-definitions>
+            <attribute-definition attribute-id="token">
+                <display-name xml:lang="x-default">token</display-name>
+                <type>string</type>
+                <localizable-flag>false</localizable-flag>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+            <attribute-definition attribute-id="tokenExpiryTime">
+                <display-name xml:lang="x-default">token expiry time</display-name>
+                <description xml:lang="x-default">Expiration time of the token</description>
+                <type>string</type>
+                <localizable-flag>false</localizable-flag>
+                <mandatory-flag>false</mandatory-flag>
+                <externally-managed-flag>false</externally-managed-flag>
+                <min-length>0</min-length>
+            </attribute-definition>
+        </attribute-definitions>
+        <group-definitions>
+            <attribute-group group-id="token">
+                <display-name xml:lang="x-default">token</display-name>
+                <attribute attribute-id="token"/>
+                <attribute attribute-id="tokenExpiryTime"/>
+            </attribute-group>
+        </group-definitions>
+    </custom-type>
+</metadata>

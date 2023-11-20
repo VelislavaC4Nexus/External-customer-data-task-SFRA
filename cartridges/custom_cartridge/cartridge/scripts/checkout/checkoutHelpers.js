@@ -32,7 +32,7 @@ checkoutHelpers.placeOrder = function (order, fraudDetectionStatus) {
         var HookManager = require("dw/system/HookMgr");
         var billingAddress = order.billingAddress;
         var shipments = order.shipments;
-        var resp;
+        var response;
         if (
             HookManager.hasHook("app.register.requestCustomerToExternalService")
         ) {
@@ -46,7 +46,7 @@ checkoutHelpers.placeOrder = function (order, fraudDetectionStatus) {
                 customerData = order.customerEmail;
                 hookFunction=hookUtils.addGuestCustomersDataFromCheckoutToExternalService
             }
-            resp = HookManager.callHook(
+            response = HookManager.callHook(
                 "app.register.requestCustomerToExternalService",
                 hookFunction,
                 customerData,
@@ -55,7 +55,7 @@ checkoutHelpers.placeOrder = function (order, fraudDetectionStatus) {
             );
         }
 
-        if (resp.ok) {
+        if (response.ok) {
             Transaction.begin();
             var placeOrderStatus = OrderMgr.placeOrder(order);
             if (placeOrderStatus === Status.ERROR) {
