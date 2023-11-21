@@ -15,8 +15,6 @@ var userLoggedIn = require('*/cartridge/scripts/middleware/userLoggedIn');
 var consentTracking = require('*/cartridge/scripts/middleware/consentTracking');
 var hookUtils = require('../scripts/utils/hookUtils');
 
-
-
 /**
  * Address-SaveAddress : Save a new or existing address
  * @name Base/Address-SaveAddress

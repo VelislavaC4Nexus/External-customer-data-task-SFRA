@@ -21,7 +21,6 @@ var base = require('base/addressBook/addressBook');
 
 base.submitAddress = function () {
     $('form.address-form').submit(function (e) {
-        console.log('CUSTOM');
         var $form = $(this);
         e.preventDefault();
         url = $form.attr('action');
