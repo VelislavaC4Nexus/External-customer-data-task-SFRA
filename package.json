@@ -114,7 +114,10 @@
     "last 2 versions",
     "ie >= 10"
   ],
-  "packageName": "app_storefront_base",
+  "paths": {
+    "base": "../storefront-reference-architecture-master/cartridges/app_storefront_base/"
+  },
+  "packageName": "custom_cartridge",
   "babel": {
     "presets": [
       "env"
