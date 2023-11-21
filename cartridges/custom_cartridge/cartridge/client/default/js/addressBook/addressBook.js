@@ -16,7 +16,6 @@ function createErrorNotification(message) {
     $('.error-messaging').append(errorHtml);
 }
 
-
 var formValidation = require('base/components/formValidation');
 var base = require('base/addressBook/addressBook');
 
